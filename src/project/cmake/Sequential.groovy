@@ -8,7 +8,7 @@ def main(_Targets,_Stage){
         case "Configure" :
             stage("SCM"){
                 try {
-                        withCredentials([usernamePassword(credentialsId: 'jenkins_bitbucket', passwordVariable: 'userPassword', usernameVariable: 'userName')]) {
+                        withCredentials([usernamePassword(credentialsId: 'jenkins_git_credentials', passwordVariable: 'userPassword', usernameVariable: 'userName')]) {
                             M_System.wksClean()
                             M_System.wksClone("http ${env.userName}:${env.userPassword} -force --single-branch","false")
                         }
@@ -23,9 +23,7 @@ def main(_Targets,_Stage){
         case "Build" :
             lock("${env.M_Project}_${env.SlaveName}"){
                 stage("${_Targets}"){
-                    withCredentials([usernamePassword(credentialsId: "xibalba", passwordVariable: 'userPassword', usernameVariable: 'userName'),
-                                     string(credentialsId: 'distribution-firebase-token', variable: 'T4D_FIREBASE_TOKEN'),
-                                     usernamePassword(credentialsId: "xibalba-apple-id", passwordVariable: 'AppleIDuserPassword', usernameVariable: 'AppleIDuserName')]){
+                    withCredentials([usernamePassword(credentialsId: "slave_default_user", passwordVariable: 'userPassword', usernameVariable: 'userName')]){
                             M_T4d.exec("wks ci-run ${_Targets} ${env.M_CI_Scenario}")
                     }
 
@@ -59,7 +57,7 @@ def main(_Targets,_Stage){
         default :
             lock("${env.M_Project}_${env.SlaveName}"){
                 // stage("${_Stage.tokenize(' ')[0]}"){
-                    withCredentials([usernamePassword(credentialsId: "xibalba", passwordVariable: 'userPassword', usernameVariable: 'userName')]){
+                    withCredentials([usernamePassword(credentialsId: "slave_default_user", passwordVariable: 'userPassword', usernameVariable: 'userName')]){
                             M_T4d.exec("wks ${_Stage}")
                     }
                 // }
