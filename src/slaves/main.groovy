@@ -2,7 +2,7 @@ package slaves;
 
 
 def getName(){
-    return 'builder04.turgot'
+    return 'local'
 }
 
 
