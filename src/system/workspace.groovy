@@ -9,7 +9,7 @@ def deleteWorkspace(){
 }
 
 def gitClone(_Repository){
-    withCredentials([usernamePassword(credentialsId: 'jenkins_bitbucket', passwordVariable: 'userPassword', usernameVariable: 'userName')]) {
+    withCredentials([usernamePassword(credentialsId: 'jenkins_git_credentials', passwordVariable: 'userPassword', usernameVariable: 'userName')]) {
         try {
             deleteDir()
             sh "git clone \"https://${env.userName}:${env.userPassword}@${_Repository}\" ./"
