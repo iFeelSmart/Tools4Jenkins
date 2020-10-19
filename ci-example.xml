@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+    <credentials    name="default"  uuid="<CredentialsUUID>" username="<Username>" >
+    <user           name="owner"    username="jenkins" group="jenkins" >
+    <configuration  name="jenkins-lib" git="<JenkinsLibGitUrl>">
+    <configuration  name="jenkins-root" path="/var/lib/jenkins">
+
+    <node           name="main"                 credentials="default"   home="/home/<user>"    host="linux" ip="<ipAddress>"    >
+
+
+    <repoGit        base="https://<httpsGitBaseUrl>"        key="tool"         name="workshop-cmake">
+
+
+    <folder         name="Home"                         root="/var/lib/jenkins/jobs">
+
+</manifest>
