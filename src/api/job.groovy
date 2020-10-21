@@ -26,6 +26,9 @@ def start(){
 
                         env.M_JobName="${M_Ci.getJobName()}"
                         env.M_AwsS3Pipeline="${M_Ci.getPipelineDirName()}"
+                        if ( ( "${env.M_Hardware}" == "null" ) || ( "${env.M_Hardware}" == "" ) ){
+                            env.M_Hardware="${M_Ci.getJobName()}"
+                        }
                         if ( ( "${env.M_BranchName}" == "null" ) || ( "${env.M_BranchName}" == "" ) ){
                             env.M_BranchName="${env.BRANCH_NAME}"
                         }
