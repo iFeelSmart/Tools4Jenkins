@@ -20,40 +20,6 @@ def main(_Targets,_Stage){
 
 
         break
-        case "Build" :
-            lock("${env.M_Project}_${env.SlaveName}"){
-                stage("${_Targets}"){
-                    withCredentials([usernamePassword(credentialsId: "slave_default_user", passwordVariable: 'userPassword', usernameVariable: 'userName')]){
-                            M_T4d.exec("wks ci-run ${_Targets} ${env.M_CI_Scenario}")
-                    }
-
-                    try {
-                        dir("${env.WS_ROOT}/output"){
-                            archiveArtifacts '**.gz'
-                            M_System.deleteWorkspace()
-                        }
-                    } catch (err) {
-                        echo "Can't Find Archive"
-                    }
-                }
-            }
-        break
-        case "End" :
-            stage("End"){
-                M_System.wksClean()
-            }
-        break
-        case "Archive" :
-            stage("Archive"){
-                try {
-                    dir("${env.WS_ROOT}/output"){
-                        archiveArtifacts '**.gz'
-                    }
-                } catch (err) {
-                    echo "Can't Find Archive"
-                }
-            }
-        break
         default :
             lock("${env.M_Project}_${env.SlaveName}"){
                 // stage("${_Stage.tokenize(' ')[0]}"){
