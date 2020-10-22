@@ -20,6 +20,11 @@ def main(_Targets,_Stage){
 
 
         break
+        case "End" :
+            stage("End"){
+                M_System.wksClean()
+            }
+        break
         default :
             lock("${env.M_Project}_${env.SlaveName}"){
                 // stage("${_Stage.tokenize(' ')[0]}"){
