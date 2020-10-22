@@ -13,4 +13,8 @@
 
     <folder         name="Home"                         root="/var/lib/jenkins/jobs">
 
+    <!-- CMake -->
+    <folder         name="CMake"                folderBase="Home">
+    <pipeline       uuid="Pipeline-Master"      name="Pipeline-Cmake"      folderBase="CMake"   jenkinsfile="_Jenkins_/Jenkinsfile.main"    repoGit="workshop-cmake"     branchFilter=".*">
+
 </manifest>
