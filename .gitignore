@@ -1,2 +1,8 @@
 srv/*
 generated-lib/*
+
+#Tools4Dev
+.t4d/
+.*.env
+.commit.tmp
+.DS_Store
