@@ -1,5 +1,6 @@
 srv/*
 generated-lib/*
+.SERVER
 
 #Tools4Dev
 .t4d/
