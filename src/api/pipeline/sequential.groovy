@@ -15,7 +15,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
             /////////////////////////////
                 M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
                 M_Vars["Stage"]="${_Name}"
-                M_Nodes["${M_Target.tokenize(' ')[0]}"] = step(M_Target,M_Vars)
+                M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars)
                 M_Targets.push("${M_Target}")
             /////////////////////////////
         }
