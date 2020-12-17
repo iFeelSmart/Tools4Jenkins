@@ -8,7 +8,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
     def M_Configuration = new system.jenkins.configuration();
     def M_System= new system.jenkins.utils();
     def M_Irc= new webServices.irc();
-    def M_Name="${_Name.tokenize(' ')[0]}"
+    def M_Name="${_Name.tokenize(' ')[0].replaceAll('%',' ')}"
 
     stage("${M_Name}"){
         for (M_Target in _BuildTargets){
