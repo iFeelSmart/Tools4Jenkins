@@ -77,6 +77,8 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             }
             if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
                 M_Irc.sendNotificationWithNode("succeeded",env.M_NotificationLvl)
+            } else {
+                echo "Skipping IRC Notif >${_Notif}<"
             }
             if ("${_Name}" == "End"){
                 echo "ITEMS PASSING ${env.M_TargetsSucceeding.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"
