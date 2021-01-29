@@ -83,6 +83,6 @@ def sendNotification(_status,_notificationLvl,_text=''){
 def SendMessage(_Message,_Channel="Jenkins"){
     def M_T4d = new system.tools4dev()
     echo "IRC Channel ${env.M_IrcChannel}" 
-     M_T4d.exec("_t4dTeamIrcSendNotif '${_Message}' '${_Channel}' ")
+    M_T4d.exec("_t4dTeamIrcSendNotif '${_Message}' '${_Channel}' ")
     
 }
