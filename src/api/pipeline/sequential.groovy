@@ -114,7 +114,7 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
     M_Res["${_Scheme}"] = {
         withEnv(M_BuildEnv) {
             // lock("${env.M_Project}_${env.SlaveName}"){
-            timeout(activity: true, time: 12, unit: 'HOURS') {
+            timeout(activity: true, time: env.M_NodeTimeout, unit: "${env.M_NodeTimeoutUnit}") {
                 node("${env.SlaveName}") {
                     timeout(activity: true, time: 5, unit: 'HOURS') {
                         ws("${env.WS_ROOT}") {
