@@ -38,6 +38,10 @@ def start(){
                         if ( ( "${env.M_NodeTimeoutUnit}" == "null" ) || ( "${env.M_NodeTimeoutUnit}" == "" ) ){
                             env.M_NodeTimeoutUnit="HOURS"
                         }
+                        if ( ( "${env.M_NodeTimeoutFailure}" == "null" ) || ( "${env.M_NodeTimeoutFailure}" == "" ) ){
+                            env.M_NodeTimeoutFailure="true"
+                        }
+                        
                         env.M_CurrentDate="${M_Ci.getCurrentDate()}"
                         env.M_Workspace="${M_Ci.getWorkspace()}"
                         

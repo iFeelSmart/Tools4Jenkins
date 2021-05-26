@@ -114,42 +114,55 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
     M_Res["${_Scheme}"] = {
         withEnv(M_BuildEnv) {
             // lock("${env.M_Project}_${env.SlaveName}"){
-            timeout(activity: true, time: env.M_NodeTimeout, unit: "${env.M_NodeTimeoutUnit}") {
-                node("${env.SlaveName}") {
-                    timeout(activity: true, time: 5, unit: 'HOURS') {
-                        ws("${env.WS_ROOT}") {
-                            try {
-                                if ("${_SetBuildStatus}" == "true")  {
-                                    M_GitServer.setSchemeStatus('INPROGRESS',"${_Scheme}")
-                                }
-                                echo "${env.SlaveName} - ${_Scheme}"
-                                M_Scheme.main("${_Scheme}","${_Vars["Stage"]}")
-
-                                lock("_Ressources"){
+            try {
+                timeout(activity: true, time: env.M_NodeTimeout, unit: "${env.M_NodeTimeoutUnit}") {
+                    node("${env.SlaveName}") {
+                        timeout(activity: true, time: 5, unit: 'HOURS') {
+                            ws("${env.WS_ROOT}") {
+                                try {
                                     if ("${_SetBuildStatus}" == "true")  {
-                                        M_GitServer.setSchemeStatus('SUCCESSFUL',"${_Scheme}")
+                                        M_GitServer.setSchemeStatus('INPROGRESS',"${_Scheme}")
                                     }
-                                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
-                                        env.M_TargetsSucceeding="${env.M_TargetsSucceeding}\n${_Scheme.replaceAll(' ','%')}"
-                                    }
-                                }
-                            } catch (err){
-                                env.M_BuildPassing=false
-                                env.M_BuildError="${err}"
+                                    echo "${env.SlaveName} - ${_Scheme}"
+                                    M_Scheme.main("${_Scheme}","${_Vars["Stage"]}")
 
-                                lock("_Ressources"){
-                                    if ("${_SetBuildStatus}" == "true")  {
-                                        M_GitServer.setSchemeStatus('FAILED',"${_Scheme}")
+                                    lock("_Ressources"){
+                                        if ("${_SetBuildStatus}" == "true")  {
+                                            M_GitServer.setSchemeStatus('SUCCESSFUL',"${_Scheme}")
+                                        }
+                                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                                            env.M_TargetsSucceeding="${env.M_TargetsSucceeding}\n${_Scheme.replaceAll(' ','%')}"
+                                        }
                                     }
-                                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
-                                        env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
-                                        env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
-                                    } 
+                                } catch (err){
+                                    env.M_BuildPassing=false
+                                    env.M_BuildError="${err}"
+
+                                    lock("_Ressources"){
+                                        if ("${_SetBuildStatus}" == "true")  {
+                                            M_GitServer.setSchemeStatus('FAILED',"${_Scheme}")
+                                        }
+                                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                                            env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
+                                            env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                                        } 
+                                    }
+                                    error "${env.M_BuildError}"
                                 }
-                                error "${env.M_BuildError}"
                             }
                         }
                     }
+                }
+            } catch (err){
+                if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
+                    env.M_BuildPassing=true
+                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                        env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
+                        env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                    }
+                } else {
+                    env.M_BuildPassing=false
+                    error "${env.M_BuildError}"
                 }
             }
         }
