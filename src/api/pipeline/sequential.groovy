@@ -72,7 +72,7 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
 
             parallel M_Nodes
             
-            if ( "${env.M_BuildPassing}" == "false" ){
+            if (( "${env.M_BuildPassing}" == "false" ) || ("${env.M_BuildAborted}" == "true" )){
                 error "${env.M_BuildError}"
             }
             if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
@@ -92,7 +92,7 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             env.M_BuildError="${err}"
             if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
                 M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
-            } else if ("${_Name}" == "Clone"){
+            } else if (("${_Name}" == "Clone") || ("${env.M_BuildAborted}" == "true" )){
                 M_Irc.sendNotificationWithNode("unstable",env.M_NotificationLvl)
             }
             if ("${_Name}" == "End"){
@@ -156,6 +156,7 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
             } catch (err){
                 if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
                     env.M_BuildPassing=true
+                    env.M_BuildAborted=true
                     if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
                         env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
                         env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
