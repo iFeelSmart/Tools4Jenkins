@@ -41,11 +41,15 @@ def start(){
                         if ( ( "${env.M_NodeTimeoutFailure}" == "null" ) || ( "${env.M_NodeTimeoutFailure}" == "" ) ){
                             env.M_NodeTimeoutFailure="true"
                         }
-                        
+                        if ( ( "${env.M_Statement}" == "null" ) || ( "${env.M_Statement}" == "" ) ){
+                            env.M_Statement="Build"
+                        }
+
                         env.M_CurrentDate="${M_Ci.getCurrentDate()}"
                         env.M_Workspace="${M_Ci.getWorkspace()}"
                         
                         env.M_BranchFullName="${env.M_BranchName.replaceAll('/','_')}"
+
                         env.M_CurrentBuildUrl="${env.JENKINS_URL}blue/organizations/jenkins/${M_Ci.getJobUrlName()}/detail/${env.BRANCH_NAME.replaceAll('/','%2F')}/${env.BUILD_NUMBER}/pipeline"
                         env.M_CurrentBuildOldUrl="${env.JENKINS_URL}job/${M_Ci.getJobUrlName().replaceAll('%2F','/job/')}/job/${env.BRANCH_NAME.replaceAll('/','%2F')}/${env.BUILD_NUMBER}/"
                         env.M_GitCommiterEmail="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoCommitersEmail")}"
@@ -75,6 +79,8 @@ def start(){
         } catch (err){
             env.M_BuildPassing=false
             env.M_BuildError="${err}"
+            deleteDir()
+            error ""
         }
     }
 }
