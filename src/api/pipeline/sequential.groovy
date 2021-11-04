@@ -1,6 +1,6 @@
 package api.pipeline;
 
-def exec(_BuildTargets,_Name="Build",_Notif="true"){
+def exec(_BuildTargets,_Name="Build",_Notif="true",_FailIfError="true"){
     def M_Vars = [:]
     def M_Nodes = [:]
     def M_Targets = ["Init"]
@@ -15,7 +15,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
             /////////////////////////////
                 M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
                 M_Vars["Stage"]="${_Name}"
-                M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars)
+                M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars,"${_Notif}","${_FailIfError}")
                 M_Targets.push("${M_Target}")
             /////////////////////////////
         }
@@ -40,7 +40,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
     }
 }
 
-def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
+def workspace(_BuildTargets,_Name="Configure",_Notif="false",_FailIfError="true"){
     def M_Vars = [:]
     def M_Nodes = [:]
     def M_Targets = ["Init"]
@@ -54,7 +54,7 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             /////////////////////////////
                 M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
                 M_Vars["Stage"]="${_Name}"
-                M_Nodes["${M_Vars["SlaveName"]}"] = step("${_Name}",M_Vars,"false")
+                M_Nodes["${M_Vars["SlaveName"]}"] = step("${_Name}",M_Vars,"false","${_FailIfError}")
                 M_Targets.push("${M_Target}")
                 
                 if ("${_Name}" != "End"){
@@ -71,6 +71,7 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             }
 
             parallel M_Nodes
+
             
             if (( "${env.M_BuildPassing}" == "false" ) || ("${env.M_BuildAborted}" == "true" )){
                 error "${env.M_BuildError}"
@@ -88,23 +89,25 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
                 M_T4d.log("_t4dSrcJenkinsLogAdd -workspace ${_Name}-End ${M_Vars['SlaveName']}")
             }
         } catch (err){
-            env.M_BuildPassing=false
-            env.M_BuildError="${err}"
-            if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
-                M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
-            } else if (("${_Name}" == "Clone") || ("${env.M_BuildAborted}" == "true" )){
-                M_Irc.sendNotificationWithNode("unstable",env.M_NotificationLvl)
+            if ( "${_FailIfError}" == "true" ){
+                env.M_BuildPassing=false
+                env.M_BuildError="${err}"
+                if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
+                    M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
+                } else if (("${_Name}" == "Clone") || ("${env.M_BuildAborted}" == "true" )){
+                    M_Irc.sendNotificationWithNode("unstable",env.M_NotificationLvl)
+                }
+                if ("${_Name}" == "End"){
+                    echo "ITEMS PASSING ${env.M_TargetsSucceeding.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"
+                    echo "ITEMS FAILING ${env.M_TargetsFailed.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"  
+                }
+                error "${env.M_BuildError}"
             }
-            if ("${_Name}" == "End"){
-                echo "ITEMS PASSING ${env.M_TargetsSucceeding.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"
-                echo "ITEMS FAILING ${env.M_TargetsFailed.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"  
-            }
-            error "${env.M_BuildError}"
         }
     }
 }
 
-def step(_Scheme,_Vars,_SetBuildStatus='true'){
+def step(_Scheme,_Vars,_SetBuildStatus='true',_FailIfError="true"){
     def M_Configuration = new system.jenkins.configuration();
     def M_System= new system.jenkins.utils();
     def M_GitServer= new webServices.git();
@@ -145,8 +148,9 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
                                         if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
                                             env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
                                             env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
-                                        } 
+                                        }
                                     }
+                                    
                                     error "${env.M_BuildError}"
                                 }
                             }
@@ -154,16 +158,19 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
                     }
                 }
             } catch (err){
-                if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
-                    env.M_BuildPassing=true
-                    env.M_BuildAborted=true
-                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
-                        env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
-                        env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                if ("${_FailIfError}" == "true" ){
+                    if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
+                        env.M_BuildPassing=true
+                        env.M_BuildAborted=true
+                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                            env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
+                            env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                        }
+                    } else {
+                        env.M_BuildPassing=false
+                        
+                        error "${env.M_BuildError}"
                     }
-                } else {
-                    env.M_BuildPassing=false
-                    error "${env.M_BuildError}"
                 }
             }
         }
