@@ -13,8 +13,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true",_FailIfError="true"){
     stage("${M_Name}"){
         for (M_Target in _BuildTargets){
             /////////////////////////////
-                M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
-                M_Vars["Stage"]="${_Name}"
+                M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target,M_Name)
                 M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars,"${_Notif}","${_FailIfError}")
                 M_Targets.push("${M_Target}")
             /////////////////////////////

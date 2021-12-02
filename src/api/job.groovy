@@ -16,6 +16,17 @@ def start(){
         env.N_MainNode="${N_Vars["SlaveName"]}"
         env.N_T4dPath="${N_Vars["Tools4Dev_PATH"]}"
         env.N_NodeType="${N_Vars["OS_TYPE"]}"
+        if ( ( "${env.N_jenkinsGitCreds}" == "null" ) || ( "${env.N_jenkinsGitCreds}" == "" ) ){
+            env.N_jenkinsGitCreds="jenkins_git_credentials"
+        }
+        if ( ( "${env.N_jenkinsGitCredsSsh}" == "null" ) || ( "${env.N_jenkinsGitCredsSsh}" == "" ) ){
+            env.N_jenkinsGitCredsSsh="jenkins_git_ssh"
+        }
+        if ( env.M_RepositoryUrl.contains('ssh://') ) {
+            env.M_CloneType="ssh"
+        } else {
+            env.M_CloneType="https"
+        }
 
         try {
             lock("master"){
