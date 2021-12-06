@@ -35,6 +35,9 @@ def exec(_BuildTargets,_Name="Build",_Notif="true",_FailIfError="true"){
             if ( "${_Notif}" == "true" ) {
                 M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
             }
+            if ( "${_FailIfError}" == "true" ){
+                error err
+            }
         }
     }
 }
@@ -149,8 +152,7 @@ def step(_Scheme,_Vars,_SetBuildStatus='true',_FailIfError="true"){
                                             env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
                                         }
                                     }
-                                    
-                                    error "${env.M_BuildError}"
+                                    error "${env.SlaveName}-${env.M_BuildError}"
                                 }
                             }
                         }
@@ -161,6 +163,7 @@ def step(_Scheme,_Vars,_SetBuildStatus='true',_FailIfError="true"){
                     if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
                         env.M_BuildPassing=true
                         env.M_BuildAborted=true
+                        env.M_FailedNode="${env.M_FailedNode}\n${env.SlaveName}"
                         if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
                             env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
                             env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)

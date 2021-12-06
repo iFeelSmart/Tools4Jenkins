@@ -13,6 +13,7 @@ def start(){
 
         env.M_BuildState="Started"
         env.M_BuildPassing=true
+        env.M_FailedNode=""
         env.N_MainNode="${N_Vars["SlaveName"]}"
         env.N_T4dPath="${N_Vars["Tools4Dev_PATH"]}"
         env.N_NodeType="${N_Vars["OS_TYPE"]}"
