@@ -36,7 +36,7 @@ def exec(_BuildTargets,_Name="Build",_Notif="true",_FailIfError="true"){
                 M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
             }
             if ( "${_FailIfError}" == "true" ){
-                error err
+                error "${err}"
             }
         }
     }
