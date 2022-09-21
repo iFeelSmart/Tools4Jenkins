@@ -37,7 +37,7 @@ def log(_Args,_Tools4Dev_PATH="${env.N_T4dPath}"){
                 try {
                     sh """#!/bin/zsh
                                     cd \$WS_ROOT 
-                                    ${_Tools4Dev_PATH}/t4d ${_Args} >> ${_Tools4Dev_PATH}/.t4d/.JenkinsLog"""
+                                    ${_Tools4Dev_PATH}/t4d ${_Args}"""
                 } catch (Exception err) {
                     echo "Error -> ${_Tools4Dev_PATH}/t4d ${_Args}"
                     error "Error - ${err}"
