@@ -67,6 +67,7 @@ def start(){
                         env.M_GitCommiterEmail="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoCommitersEmail")}"
                         env.M_GitCommitMessage="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoLastCommitMessage")}"
                         env.M_GitRepoName="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoRepoName")}"
+                        env.M_GitRepoKey="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoProjectKEY")}"
                         env.M_Version="${M_T4d.getStdoutOneLine(               "_wksGetVersion")}"
                         env.M_GitSHA7="${M_T4d.getStdoutOneLine(               "_t4dSrcGitInfoSha7").take(7)}"
                         env.M_GitSHA="${M_T4d.getStdoutOneLine(                "_t4dSrcGitInfoSha").take(40)}"
