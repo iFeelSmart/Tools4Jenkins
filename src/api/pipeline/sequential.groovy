@@ -125,33 +125,37 @@ def step(_Scheme,_Vars,_SetBuildStatus='true',_FailIfError="true"){
                         timeout(activity: true, time: 5, unit: 'HOURS') {
                             ws("${env.WS_ROOT}") {
                                 try {
-                                    if ("${_SetBuildStatus}" == "true")  {
-                                        M_GitServer.setSchemeStatus('INPROGRESS',"${_Scheme}")
+                                    if ("${_SetBuildStatus}" != "false")  {
+                                        echo "BuildStatus - ${_SetBuildStatus} - ${_Scheme} INPROGRESS"
+                                        M_GitServer.setSchemeStatus('INPROGRESS',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
                                     }
                                     echo "${env.SlaveName} - ${_Scheme}"
                                     M_Scheme.main("${_Scheme}","${_Vars["Stage"]}")
 
                                     lock("_Ressources"){
-                                        if ("${_SetBuildStatus}" == "true")  {
-                                            M_GitServer.setSchemeStatus('SUCCESSFUL',"${_Scheme}")
+                                        if ("${_SetBuildStatus}" != "false")  {
+                                            echo "BuildStatus - ${_SetBuildStatus} - ${_Scheme} SUCCESSFUL"
+                                            M_GitServer.setSchemeStatus('SUCCESSFUL',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
                                         }
                                         if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
                                             env.M_TargetsSucceeding="${env.M_TargetsSucceeding}\n${_Scheme.replaceAll(' ','%')}"
                                         }
                                     }
+
                                 } catch (err){
                                     env.M_BuildPassing=false
                                     env.M_BuildError="${err}"
 
                                     lock("_Ressources"){
-                                        if ("${_SetBuildStatus}" == "true")  {
-                                            M_GitServer.setSchemeStatus('FAILED',"${_Scheme}")
+                                        if ("${_SetBuildStatus}" != "false")  {
+                                            M_GitServer.setSchemeStatus('FAILED',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
                                         }
                                         if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
                                             env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
                                             env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
                                         }
                                     }
+
                                     error "${env.SlaveName}-${env.M_BuildError}"
                                 }
                             }

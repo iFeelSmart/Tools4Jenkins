@@ -34,6 +34,11 @@ def start(){
 
                 node("${env.N_MainNode}") {
                     ws(){
+
+                        if ( env.BRANCH_NAME.contains("pull-requests") ){
+                            env.M_PullRequest="${env.BRANCH_NAME.replaceAll('/from','').replaceAll('pull-requests/','pr-')}"
+                        }
+
                         M_Wks.gitClone("${env.M_RepositoryUrl}")
 
                         env.M_JobName="${M_Ci.getJobName()}"
@@ -93,7 +98,13 @@ def start(){
         } catch (err){
             env.M_BuildPassing=false
             env.M_BuildError="${err}"
-            deleteDir()
+            lock("master"){
+                node("${env.N_MainNode}") {
+                    ws(){
+                        deleteDir()
+                    }
+                }
+            }
             error ""
         }
     }

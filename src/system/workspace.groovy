@@ -14,12 +14,23 @@ def gitClone(_Repository){
             deleteDir()
             echo "git clone \"${_Repository}\" ./"
             sh "git clone \"${_Repository}\" ./"
-            if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
-                echo "git branch >${env.BRANCH_NAME}<"
-                sh "git checkout ${env.BRANCH_NAME}"
+            if ( "${env.M_PullRequest}" != "null" ){
+                    echo "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    sh "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    echo "git checkout >${env.M_PullRequest}<"
+                    sh "git checkout ${env.M_PullRequest}"
+            } else if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
+                try {
+                    echo "git branch >${env.BRANCH_NAME}<"
+                    sh "git checkout ${env.BRANCH_NAME}"
+                } catch (err) {
+                    
+                    sh "git checkout ${env.BRANCH_NAME}"
+                }
+                
             } else {
                 echo "git sha >${env.M_GitSHA}<"
-                sh "git checkout ${env.M_GitSHA}"
+                    sh "git checkout ${env.M_GitSHA}"
             }
         }
     } else {
@@ -27,7 +38,12 @@ def gitClone(_Repository){
             try {
                 deleteDir()
                 sh "git clone \"https://${env.userName}:${env.userPassword}@${_Repository}\" ./"
-                if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
+                if ( "${env.M_PullRequest}" != "null" ){
+                    echo "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    sh "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    echo "git checkout >${env.M_PullRequest}<"
+                    sh "git checkout ${env.M_PullRequest}"
+                } else if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
                     echo "git branch >${env.BRANCH_NAME}<"
                     sh "git checkout ${env.BRANCH_NAME}"
                 } else {
@@ -38,7 +54,12 @@ def gitClone(_Repository){
                 sleep 5
                 deleteDir()
                 sh "git clone \"https://${env.userName}:${env.userPassword}@${_Repository}\" ./"
-                if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
+                if ( "${env.M_PullRequest}" != "" ){
+                    echo "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    sh "git fetch origin refs/${env.BRANCH_NAME}:${env.M_PullRequest}"
+                    echo "git checkout >${env.M_PullRequest}<"
+                    sh "git checkout ${env.M_PullRequest}"
+                } else if ( ( "${env.M_GitSHA}" == "" ) || ( "${env.M_GitSHA}" == "null" ) ){
                     echo "git branch >${env.BRANCH_NAME}<"
                     sh "git checkout ${env.BRANCH_NAME}"
                 } else {
