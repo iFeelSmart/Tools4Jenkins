@@ -13,15 +13,32 @@ def start(){
 
         env.M_BuildState="Started"
         env.M_BuildPassing=true
+        env.M_FailedNode=""
         env.N_MainNode="${N_Vars["SlaveName"]}"
         env.N_T4dPath="${N_Vars["Tools4Dev_PATH"]}"
         env.N_NodeType="${N_Vars["OS_TYPE"]}"
+        if ( ( "${env.N_jenkinsGitCreds}" == "null" ) || ( "${env.N_jenkinsGitCreds}" == "" ) ){
+            env.N_jenkinsGitCreds="jenkins_git_credentials"
+        }
+        if ( ( "${env.N_jenkinsGitCredsSsh}" == "null" ) || ( "${env.N_jenkinsGitCredsSsh}" == "" ) ){
+            env.N_jenkinsGitCredsSsh="jenkins_git_ssh"
+        }
+        if ( env.M_RepositoryUrl.contains('ssh://') ) {
+            env.M_CloneType="ssh"
+        } else {
+            env.M_CloneType="https"
+        }
 
         try {
             lock("master"){
 
                 node("${env.N_MainNode}") {
                     ws(){
+
+                        if ( env.BRANCH_NAME.contains("pull-requests") ){
+                            env.M_PullRequest="${env.BRANCH_NAME.replaceAll('/from','').replaceAll('pull-requests/','pr-')}"
+                        }
+
                         M_Wks.gitClone("${env.M_RepositoryUrl}")
 
                         env.M_JobName="${M_Ci.getJobName()}"
@@ -38,14 +55,24 @@ def start(){
                         if ( ( "${env.M_NodeTimeoutUnit}" == "null" ) || ( "${env.M_NodeTimeoutUnit}" == "" ) ){
                             env.M_NodeTimeoutUnit="HOURS"
                         }
+                        if ( ( "${env.M_NodeTimeoutFailure}" == "null" ) || ( "${env.M_NodeTimeoutFailure}" == "" ) ){
+                            env.M_NodeTimeoutFailure="true"
+                        }
+                        if ( ( "${env.M_Statement}" == "null" ) || ( "${env.M_Statement}" == "" ) ){
+                            env.M_Statement="Build"
+                        }
+
                         env.M_CurrentDate="${M_Ci.getCurrentDate()}"
                         env.M_Workspace="${M_Ci.getWorkspace()}"
                         
                         env.M_BranchFullName="${env.M_BranchName.replaceAll('/','_')}"
+
                         env.M_CurrentBuildUrl="${env.JENKINS_URL}blue/organizations/jenkins/${M_Ci.getJobUrlName()}/detail/${env.BRANCH_NAME.replaceAll('/','%2F')}/${env.BUILD_NUMBER}/pipeline"
                         env.M_CurrentBuildOldUrl="${env.JENKINS_URL}job/${M_Ci.getJobUrlName().replaceAll('%2F','/job/')}/job/${env.BRANCH_NAME.replaceAll('/','%2F')}/${env.BUILD_NUMBER}/"
                         env.M_GitCommiterEmail="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoCommitersEmail")}"
                         env.M_GitCommitMessage="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoLastCommitMessage")}"
+                        env.M_GitRepoName="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoRepoName")}"
+                        env.M_GitRepoKey="${M_T4d.getStdoutOneLine(      "_t4dSrcGitInfoProjectKEY")}"
                         env.M_Version="${M_T4d.getStdoutOneLine(               "_wksGetVersion")}"
                         env.M_GitSHA7="${M_T4d.getStdoutOneLine(               "_t4dSrcGitInfoSha7").take(7)}"
                         env.M_GitSHA="${M_T4d.getStdoutOneLine(                "_t4dSrcGitInfoSha").take(40)}"
@@ -71,6 +98,14 @@ def start(){
         } catch (err){
             env.M_BuildPassing=false
             env.M_BuildError="${err}"
+            lock("master"){
+                node("${env.N_MainNode}") {
+                    ws(){
+                        deleteDir()
+                    }
+                }
+            }
+            error ""
         }
     }
 }

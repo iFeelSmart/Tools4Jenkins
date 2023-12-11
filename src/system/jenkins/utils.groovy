@@ -21,7 +21,8 @@ def getArrayContent(_Array){
 }
 
 def add(_int1,int _int2){
-    int M_int=(_int1)
+    int M_int= Integer.parseInt(_int1);
+    // int M_int=(_int1)
     return ( ( M_int ) + ( _int2 ) )
 }
 

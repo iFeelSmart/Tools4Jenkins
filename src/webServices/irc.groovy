@@ -24,7 +24,7 @@ def sendNotification(_status,_notificationLvl,_text=''){
                 M_Scheme.notifBuildFailed(_text)
             }
             if ("${_status}" == "unstable") {
-                M_Scheme.notifBuildUnstable()
+                M_Scheme.notifBuildUnstable(_text)
             }
             break
         case "3":
@@ -38,7 +38,7 @@ def sendNotification(_status,_notificationLvl,_text=''){
                 M_Scheme.notifBuildFailed(_text)
             }
             if ("${_status}" == "unstable") {
-                M_Scheme.notifBuildUnstable()
+                M_Scheme.notifBuildUnstable(_text)
             }
             break
         case "2":
@@ -52,7 +52,7 @@ def sendNotification(_status,_notificationLvl,_text=''){
                 M_Scheme.notifBuildFailed(_text)
             }
             if ("${_status}" == "unstable") {
-                M_Scheme.notifBuildUnstable()
+                M_Scheme.notifBuildUnstable(_text)
             }
             break
         case "1":
@@ -63,7 +63,7 @@ def sendNotification(_status,_notificationLvl,_text=''){
                 M_Scheme.notifBuildFailed(_text)
             }
             if ("${_status}" == "unstable") {
-                M_Scheme.notifBuildUnstable()
+                M_Scheme.notifBuildUnstable(_text)
             }
             break
         case "0":
@@ -71,7 +71,7 @@ def sendNotification(_status,_notificationLvl,_text=''){
                 M_Scheme.notifBuildFailed(_text)
             }
             if ("${_status}" == "unstable") {
-                M_Scheme.notifBuildUnstable()
+                M_Scheme.notifBuildUnstable(_text)
             }
             break
         default:

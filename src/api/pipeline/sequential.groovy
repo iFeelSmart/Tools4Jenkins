@@ -1,6 +1,6 @@
 package api.pipeline;
 
-def exec(_BuildTargets,_Name="Build",_Notif="true"){
+def exec(_BuildTargets,_Name="Build",_Notif="true",_FailIfError="true"){
     def M_Vars = [:]
     def M_Nodes = [:]
     def M_Targets = ["Init"]
@@ -13,9 +13,8 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
     stage("${M_Name}"){
         for (M_Target in _BuildTargets){
             /////////////////////////////
-                M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
-                M_Vars["Stage"]="${_Name}"
-                M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars)
+                M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target,M_Name)
+                M_Nodes["${M_Target.tokenize(' ')[0].replaceAll('%',' ')}"] = step(M_Target,M_Vars,"${_Notif}","${_FailIfError}")
                 M_Targets.push("${M_Target}")
             /////////////////////////////
         }
@@ -36,11 +35,14 @@ def exec(_BuildTargets,_Name="Build",_Notif="true"){
             if ( "${_Notif}" == "true" ) {
                 M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
             }
+            if ( "${_FailIfError}" == "true" ){
+                error "${err}"
+            }
         }
     }
 }
 
-def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
+def workspace(_BuildTargets,_Name="Configure",_Notif="false",_FailIfError="true"){
     def M_Vars = [:]
     def M_Nodes = [:]
     def M_Targets = ["Init"]
@@ -54,7 +56,7 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             /////////////////////////////
                 M_Vars = M_Configuration.getSlaveConfiguration(env.M_Project,M_Target)
                 M_Vars["Stage"]="${_Name}"
-                M_Nodes["${M_Vars["SlaveName"]}"] = step("${_Name}",M_Vars,"false")
+                M_Nodes["${M_Vars["SlaveName"]}"] = step("${_Name}",M_Vars,"false","${_FailIfError}")
                 M_Targets.push("${M_Target}")
                 
                 if ("${_Name}" != "End"){
@@ -71,8 +73,9 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
             }
 
             parallel M_Nodes
+
             
-            if ( "${env.M_BuildPassing}" == "false" ){
+            if (( "${env.M_BuildPassing}" == "false" ) || ("${env.M_BuildAborted}" == "true" )){
                 error "${env.M_BuildError}"
             }
             if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
@@ -88,23 +91,25 @@ def workspace(_BuildTargets,_Name="Configure",_Notif="false"){
                 M_T4d.log("_t4dSrcJenkinsLogAdd -workspace ${_Name}-End ${M_Vars['SlaveName']}")
             }
         } catch (err){
-            env.M_BuildPassing=false
-            env.M_BuildError="${err}"
-            if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
-                M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
-            } else if ("${_Name}" == "Clone"){
-                M_Irc.sendNotificationWithNode("unstable",env.M_NotificationLvl)
+            if ( "${_FailIfError}" == "true" ){
+                env.M_BuildPassing=false
+                env.M_BuildError="${err}"
+                if (("${_Notif}" == "true") || ("${_Notif}" == "end")) {
+                    M_Irc.sendNotificationWithNode("failed",env.M_NotificationLvl)
+                } else if (("${_Name}" == "Clone") || ("${env.M_BuildAborted}" == "true" )){
+                    M_Irc.sendNotificationWithNode("unstable",env.M_NotificationLvl)
+                }
+                if ("${_Name}" == "End"){
+                    echo "ITEMS PASSING ${env.M_TargetsSucceeding.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"
+                    echo "ITEMS FAILING ${env.M_TargetsFailed.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"  
+                }
+                error "${env.M_BuildError}"
             }
-            if ("${_Name}" == "End"){
-                echo "ITEMS PASSING ${env.M_TargetsSucceeding.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"
-                echo "ITEMS FAILING ${env.M_TargetsFailed.replaceAll('Clone','').replaceAll('Configure','').replaceAll('End','')}"  
-            }
-            error "${env.M_BuildError}"
         }
     }
 }
 
-def step(_Scheme,_Vars,_SetBuildStatus='true'){
+def step(_Scheme,_Vars,_SetBuildStatus='true',_FailIfError="true"){
     def M_Configuration = new system.jenkins.configuration();
     def M_System= new system.jenkins.utils();
     def M_GitServer= new webServices.git();
@@ -114,41 +119,63 @@ def step(_Scheme,_Vars,_SetBuildStatus='true'){
     M_Res["${_Scheme}"] = {
         withEnv(M_BuildEnv) {
             // lock("${env.M_Project}_${env.SlaveName}"){
-            timeout(activity: true, time: env.M_NodeTimeout, unit: "${env.M_NodeTimeoutUnit}") {
-                node("${env.SlaveName}") {
-                    timeout(activity: true, time: 5, unit: 'HOURS') {
-                        ws("${env.WS_ROOT}") {
-                            try {
-                                if ("${_SetBuildStatus}" == "true")  {
-                                    M_GitServer.setSchemeStatus('INPROGRESS',"${_Scheme}")
-                                }
-                                echo "${env.SlaveName} - ${_Scheme}"
-                                M_Scheme.main("${_Scheme}","${_Vars["Stage"]}")
+            try {
+                timeout(activity: true, time: env.M_NodeTimeout, unit: "${env.M_NodeTimeoutUnit}") {
+                    node("${env.SlaveName}") {
+                        timeout(activity: true, time: 5, unit: 'HOURS') {
+                            ws("${env.WS_ROOT}") {
+                                try {
+                                    if ("${_SetBuildStatus}" != "false")  {
+                                        echo "BuildStatus - ${_SetBuildStatus} - ${_Scheme} INPROGRESS"
+                                        M_GitServer.setSchemeStatus('INPROGRESS',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
+                                    }
+                                    echo "${env.SlaveName} - ${_Scheme}"
+                                    M_Scheme.main("${_Scheme}","${_Vars["Stage"]}")
 
-                                lock("_Ressources"){
-                                    if ("${_SetBuildStatus}" == "true")  {
-                                        M_GitServer.setSchemeStatus('SUCCESSFUL',"${_Scheme}")
+                                    lock("_Ressources"){
+                                        if ("${_SetBuildStatus}" != "false")  {
+                                            echo "BuildStatus - ${_SetBuildStatus} - ${_Scheme} SUCCESSFUL"
+                                            M_GitServer.setSchemeStatus('SUCCESSFUL',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
+                                        }
+                                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                                            env.M_TargetsSucceeding="${env.M_TargetsSucceeding}\n${_Scheme.replaceAll(' ','%')}"
+                                        }
                                     }
-                                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
-                                        env.M_TargetsSucceeding="${env.M_TargetsSucceeding}\n${_Scheme.replaceAll(' ','%')}"
-                                    }
-                                }
-                            } catch (err){
-                                env.M_BuildPassing=false
-                                env.M_BuildError="${err}"
 
-                                lock("_Ressources"){
-                                    if ("${_SetBuildStatus}" == "true")  {
-                                        M_GitServer.setSchemeStatus('FAILED',"${_Scheme}")
+                                } catch (err){
+                                    env.M_BuildPassing=false
+                                    env.M_BuildError="${err}"
+
+                                    lock("_Ressources"){
+                                        if ("${_SetBuildStatus}" != "false")  {
+                                            M_GitServer.setSchemeStatus('FAILED',"${_SetBuildStatus.replaceAll("true","${_Scheme}")}")
+                                        }
+                                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                                            env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
+                                            env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                                        }
                                     }
-                                    if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
-                                        env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
-                                        env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
-                                    } 
+
+                                    error "${env.SlaveName}-${env.M_BuildError}"
                                 }
-                                error "${env.M_BuildError}"
                             }
                         }
+                    }
+                }
+            } catch (err){
+                if ("${_FailIfError}" == "true" ){
+                    if ("${err}" == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException"){
+                        env.M_BuildPassing=true
+                        env.M_BuildAborted=true
+                        env.M_FailedNode="${env.M_FailedNode}\n${env.SlaveName}"
+                        if (("${_Scheme}" != "Clone") && ("${_Scheme}" != "End")) {
+                            env.M_TargetsFailed="${env.M_TargetsFailed}\n${_Scheme.replaceAll(' ','%')}"
+                            env.M_TargetSucceeded=M_System.minus(env.M_TargetSucceeded,1)
+                        }
+                    } else {
+                        env.M_BuildPassing=false
+                        
+                        error "${env.M_BuildError}"
                     }
                 }
             }
